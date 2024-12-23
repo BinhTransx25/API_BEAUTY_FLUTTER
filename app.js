@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const cors = require('cors'); // Thêm cors vào đây
 // kết nối với mongodb(egOs06SnjVLToRgU)
 // Bình: gIzzTqWVtE6x4Urj
-const atlas = 'mongodb+srv://nguyenminhkhuong318:egOs06SnjVLToRgU@cluster0.vd5pl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+const atlas = 'mongodb+srv://binhtransx25:4TJ7d49qp7Ll3mHc@cluster0.d5wog.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 
 // Gọi swagger từ file swagger.js
 const { swaggerUi, swaggerDocs } = require('./bin/swagger');

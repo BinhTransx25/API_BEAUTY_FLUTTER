@@ -13,6 +13,8 @@ const UserAddressSchema = new Schema({
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now },
     isDeleted:{type:Boolean, required:false, default:false},
+    isDeleted:{type:Boolean, required:false, default:false},
+
 });
 
 module.exports = mongoose.models.userAddress || mongoose.model('userAddress', UserAddressSchema);
