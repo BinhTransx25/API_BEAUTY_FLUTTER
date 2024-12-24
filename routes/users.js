@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+
 const ControllerUser = require('../controllers/users/ControllerUser');
 
 /**
@@ -48,11 +49,30 @@ const ControllerUser = require('../controllers/users/ControllerUser');
 router.post('/register', async (req, res, next) => {
   const { name, email, password, phone, image, role, images, shopCategory_ids, address, latitude, longitude, verified, imageVerified } = req.body;
   try {
-    let result = await ControllerUser.register(name, email, password, phone, image, role,images, shopCategory_ids, address, latitude, longitude, verified, imageVerified);
+    let result = await ControllerUser.register(name, email, password, phone, image, role, images, shopCategory_ids, address, latitude, longitude, verified, imageVerified);
     return res.status(200).json({ status: true, data: result });
   } catch (error) {
     console.error('Error during registration:', error);
     return res.status(500).json({ status: false, message: error.message });
+  }
+});
+
+router.post('/register_user', async (req, res, next) => {
+  const { name, email, password, phone, role } = req.body;
+  try {
+    let result = await ControllerUser.registerUser(name, email, password, phone, role);
+
+    if (result.errors) {
+      return res.status(400).json({
+        status: false,
+        message: result.errors
+      });
+    }
+
+    return res.status(200).json({ status: true, message: result.message });
+  } catch (error) {
+    console.error('Error during registration:', error);
+    return res.status(500).json({ status: false, message: 'Lỗi hệ thống, vui lòng thử lại sau.' });
   }
 });
 
@@ -79,13 +99,24 @@ router.post('/register', async (req, res, next) => {
  *       500:
  *         description: Lỗi khi đăng nhập
  */
-router.post('/login', async (req, res, next) => {
+router.post('/login_user', async (req, res, next) => {
   const { identifier, password } = req.body;
   try {
-    let result = await ControllerUser.login(identifier, password);
-    return res.status(200).json({ status: true, data: result });
+    let result = await ControllerUser.login_user(identifier, password);
+
+    if (result.errors) {
+      return res.status(400).json({
+        status: false,
+        message: result.errors
+      });
+    }
+
+
+    return res.status(200).json({
+      status: true, data: result
+    });
   } catch (error) {
-    console.error('Error during login:', error);
+    console.error('Error during login_user:', error);
     return res.status(500).json({ status: false, message: error.message });
   }
 });
@@ -179,13 +210,17 @@ router.post('/verify', async (req, res, next) => {
  *         description: Lỗi khi đặt lại mật khẩu
  */
 router.post('/reset-password', async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ errors: 'Vui lòng cung cấp email.' });
+  }
+
   try {
-    const result = await ControllerUser.resetPassword(email, password);
-    return res.status(200).json({ status: true, data: result });
+    const result = await resetPassword(email);
+    return res.status(200).json({ message: result.message });
   } catch (error) {
-    console.error('Error during reset password:', error);
-    return res.status(500).json({ status: false, message: error.message });
+    return res.status(400).json({ errors: error.message });
   }
 });
 
@@ -359,51 +394,111 @@ router.delete('/delete/:id', async (req, res) => {
 
 router.post('/change-password', async (req, res) => {
   const { email, oldPassword, newPassword } = req.body;
+
+  if (!email || !oldPassword || !newPassword) {
+    return res.status(400).json({ errors: 'Vui lòng cung cấp đầy đủ thông tin.' });
+  }
+
   try {
     const result = await ControllerUser.changePassword(email, oldPassword, newPassword);
-    return res.status(200).json({ status: true, data: result.message });
+    return res.status(200).json({ message: result.message });
   } catch (error) {
-    return res.status(500).json({ status: false, data: error.message });
+    return res.status(400).json({ errors: error.message });
   }
 });
 
 router.delete('/softdelete/:id', async function (req, res, next) {
   try {
-      const userId = req.params.id;
-      const updatedUser = await ControllerUser.removeSoftDeleted(userId);
+    const userId = req.params.id;
+    const updatedUser = await ControllerUser.removeSoftDeleted(userId);
 
-      if (updatedUser) {
-          return res.status(200).json({
-              status: true,
-              message: 'User successfully soft deleted',
-              data: updatedUser, // Trả về thông tin đã cập nhật
-          });
-      } else {
-          return res.status(404).json({
-              status: false,
-              message: 'User not found',
-          });
-      }
+    if (updatedUser) {
+      return res.status(200).json({
+        status: true,
+        message: 'User successfully soft deleted',
+        data: updatedUser, // Trả về thông tin đã cập nhật
+      });
+    } else {
+      return res.status(404).json({
+        status: false,
+        message: 'User not found',
+      });
+    }
   } catch (error) {
-      console.log('Delete User error:', error);
-      return res.status(500).json({ status: false, error: error.message });
+    console.log('Delete User error:', error);
+    return res.status(500).json({ status: false, error: error.message });
   }
 });
 
 router.put('/restore/available/:id', async (req, res) => {
   try {
-      const userId = req.params.id;
-      const updatedUser = await ControllerUser.restoreAndSetAvailable(userId);
+    const userId = req.params.id;
+    const updatedUser = await ControllerUser.restoreAndSetAvailable(userId);
 
-      return res.status(200).json({
-          status: true,
-          message: 'User restored and set to available',
-          data: updatedUser,
-      });
+    return res.status(200).json({
+      status: true,
+      message: 'User restored and set to available',
+      data: updatedUser,
+    });
   } catch (error) {
-      console.log('Restore User error:', error);
-      return res.status(500).json({ status: false, error: error.message });
+    console.log('Restore User error:', error);
+    return res.status(500).json({ status: false, error: error.message });
   }
 });
+
+// Route gửi OTP
+router.post('/send-otp', async (req, res, next) => {
+  const { email } = req.body;
+  try {
+    let result = await ControllerUser.sendOtpToEmail(email);  // Gọi hàm sendOtpToEmail
+    return res.status(200).json({ status: true, message: result });
+  } catch (error) {
+    console.error('Error during send OTP:', error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+});
+
+// Route xác thực OTP
+router.post('/password/verify-otp', async (req, res, next) => {
+  const { email, otp } = req.body;  // Lấy email và OTP từ body
+  try {
+    let result = await ControllerUser.resetPassWordverifyOtp(email, otp);  // Gọi hàm verifyOtp
+    return res.status(200).json({ status: true, message: result });
+  } catch (error) {
+    console.error('Error during verify OTP:', error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+});
+
+router.post('/send-otp-sms', async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  if (!phoneNumber) {
+    return res.status(400).json({ status: false, message: 'Số điện thoại là bắt buộc.' });
+  }
+
+  try {
+    const result = await ControllerUser.sendOtpToPhone(phoneNumber);
+    return res.status(200).json({ status: true, message: 'OTP đã được gửi qua SMS.', data: result });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+});
+
+router.post('/register/verify-otp', async (req, res) => {
+  const { email, otp } = req.body; // Lấy email và OTP từ request body
+
+  if (!email || !otp) {
+    return res.status(400).json({ errors: 'Vui lòng cung cấp email và mã OTP.' });
+  }
+
+  try {
+    const message = await ControllerUser.registerVerifyOtp(email, otp);
+    return res.status(200).json({ message });
+  } catch (error) {
+    return res.status(400).json({ errors: error.message });
+  }
+});
+
 
 module.exports = router;
