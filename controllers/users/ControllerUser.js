@@ -130,9 +130,9 @@ const registerUser = async (
       // Tạo một người dùng mới
       const salt = await bcrypt.genSalt(10);
       password = await bcrypt.hash(password, salt);
-      
+
       // Set thời gian hết hạn đăng ký (60 phút sau khi tạo)
-      const registerExpiry = new Date(Date.now() + 60 * 60 * 1000); 
+      const registerExpiry = new Date(Date.now() + 60 * 60 * 1000);
 
       user = new ModelUser({ name, email, password, phone, role, RegisterExpiry: registerExpiry });
       await user.save(); // Lưu người dùng vào cơ sở dữ liệu
@@ -161,7 +161,7 @@ const deleteExpiredUsers = async () => {
     console.log(`Đã xóa tài khoản hết hạn: ${user.email}`);
   }
 
-  console.log('Đã xóa các tài khoản hết hạn.');
+  // console.log('Đã xóa các tài khoản hết hạn.');
 };
 
 // Chạy hàm xóa tài khoản hết hạn mỗi phút
@@ -352,23 +352,27 @@ const resetPassword = async (email) => {
 };
 
 const changePassword = async (email, oldPassword, newPassword) => {
+  let errors = null; // Biến lưu trữ lỗi
   try {
     // Tìm user theo email
     const userInDB = await ModelUser.findOne({ email });
     if (!userInDB) {
-      throw new Error('Email không tồn tại');
+      errors = 'Email không tồn tại.';
+      return { errors };
     }
 
     // Kiểm tra nếu tài khoản đã được xác thực (verified: true)
     if (userInDB.verified !== true) {
-      throw new Error('Tài khoản chưa được xác thực, không thể thay đổi mật khẩu');
+      errors = 'Tài khoản chưa được xác thực, không thể thay đổi mật khẩu.';
+      return { errors };
     }
 
     // Kiểm tra mật khẩu cũ
     // Nếu mật khẩu đã được băm
     const checkPassword = await bcrypt.compare(oldPassword, userInDB.password);
     if (!checkPassword) {
-      return { message: 'Mật khẩu cũ không đúng' };
+      errors = 'Mật khẩu cũ không đúng.';
+      return { errors };
     }
 
     // Băm mật khẩu mới
@@ -381,7 +385,7 @@ const changePassword = async (email, oldPassword, newPassword) => {
     // Lưu mật khẩu mới và cập nhật trạng thái vào cơ sở dữ liệu
     await userInDB.save();
 
-    return { message: 'Đổi mật khẩu thành công, tài khoản đã bị hủy xác thực' };
+    return { message: 'Đổi mật khẩu thành công.' };
   } catch (error) {
     console.error('Error changing password:', error);
     throw new Error(error.message || 'Lỗi khi đổi mật khẩu');
@@ -540,7 +544,7 @@ const sendOtpToEmail = async (email) => {
 
     // Lưu OTP và thời gian hết hạn (5 phút)
     user.otp = otp;
-    user.otpExpiry = Date.now() + 1 * 60 * 1000; // Mã OTP hết hạn sau 5 phút
+    user.otpExpiry = Date.now() + 5 * 60 * 1000; // Mã OTP hết hạn sau 5 phút
     await user.save();
 
     // Tạo nội dung email
@@ -548,7 +552,7 @@ const sendOtpToEmail = async (email) => {
       from: 'binhtransx25@gmail.com', // Địa chỉ email gửi
       to: email,                    // Địa chỉ email nhận
       subject: 'Mã OTP xác thực',    // Tiêu đề email
-      text: `Mã OTP của bạn là: ${otp}. Mã này sẽ hết hạn sau 1 phút.`, // Nội dung email
+      text: `Mã OTP của bạn là: ${otp}. Mã này sẽ hết hạn sau 3 phút.`, // Nội dung email
     };
 
     // Gửi email
@@ -576,14 +580,14 @@ const sendResetPasswordEmail = async (email, newPassword) => {
     throw new Error('Lỗi khi gửi email');
   }
 };
-// Hàm xác thực OTP
-const resetPassWordverifyOtp = async (email, otpInput) => {
+// Hàm xác thực OTP để dổi mật khẩukhẩu
+const changePassWordverifyOtp = async (email, otpInput) => {
   let errors = null; // Biến lưu trữ lỗi
   try {
     // Tìm người dùng theo email
     const user = await ModelUser.findOne({ email });
     if (!user) {
-      
+
       errors = 'Email không tồn tại.';
       return { errors };
     }
@@ -608,7 +612,7 @@ const resetPassWordverifyOtp = async (email, otpInput) => {
     // Lưu lại thông tin người dùng
     await user.save();
 
-    return { message:'Xác thực OTP thành công, có thể đổi mật khẩu .'};
+    return { message: 'Xác thực OTP thành công, có thể đổi mật khẩu .' };
   } catch (error) {
     console.error('Lỗi khi xác thực OTP:', error);
     throw new Error(error.message || 'Lỗi khi xác thực OTP.');
@@ -621,7 +625,7 @@ const registerVerifyOtp = async (email, otpInput) => {
     // Tìm người dùng theo email
     const user = await ModelUser.findOne({ email });
     if (!user) {
-      
+
       errors = 'Email không tồn tại.';
       return { errors };
     }
@@ -699,7 +703,7 @@ module.exports = {
   restoreAndSetAvailable,
   registerUser,
   sendOtpToEmail,
-  resetPassWordverifyOtp,
+  changePassWordverifyOtp,
   deleteExpiredUsers,
   registerVerifyOtp
 

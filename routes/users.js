@@ -458,11 +458,12 @@ router.post('/send-otp', async (req, res, next) => {
   }
 });
 
-// Route xác thực OTP
+// xác thực OTP để đổi mật khẩu 
+
 router.post('/password/verify-otp', async (req, res, next) => {
   const { email, otp } = req.body;  // Lấy email và OTP từ body
   try {
-    let result = await ControllerUser.resetPassWordverifyOtp(email, otp);  // Gọi hàm verifyOtp
+    let result = await ControllerUser.changePassWordverifyOtp(email, otp);  // Gọi hàm verifyOtp
     return res.status(200).json({ status: true, message: result });
   } catch (error) {
     console.error('Error during verify OTP:', error);
@@ -470,21 +471,7 @@ router.post('/password/verify-otp', async (req, res, next) => {
   }
 });
 
-router.post('/send-otp-sms', async (req, res) => {
-  const { phoneNumber } = req.body;
-
-  if (!phoneNumber) {
-    return res.status(400).json({ status: false, message: 'Số điện thoại là bắt buộc.' });
-  }
-
-  try {
-    const result = await ControllerUser.sendOtpToPhone(phoneNumber);
-    return res.status(200).json({ status: true, message: 'OTP đã được gửi qua SMS.', data: result });
-  } catch (error) {
-    return res.status(500).json({ status: false, message: error.message });
-  }
-});
-
+// Xác thực otp sau khi đăng ký 
 router.post('/register/verify-otp', async (req, res) => {
   const { email, otp } = req.body; // Lấy email và OTP từ request body
 
@@ -499,6 +486,23 @@ router.post('/register/verify-otp', async (req, res) => {
     return res.status(400).json({ errors: error.message });
   }
 });
+
+// router.post('/send-otp-sms', async (req, res) => {
+//   const { phoneNumber } = req.body;
+
+//   if (!phoneNumber) {
+//     return res.status(400).json({ status: false, message: 'Số điện thoại là bắt buộc.' });
+//   }
+
+//   try {
+//     const result = await ControllerUser.sendOtpToPhone(phoneNumber);
+//     return res.status(200).json({ status: true, message: 'OTP đã được gửi qua SMS.', data: result });
+//   } catch (error) {
+//     return res.status(500).json({ status: false, message: error.message });
+//   }
+// });
+
+
 
 
 module.exports = router;
