@@ -5,8 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const mongoose = require('mongoose');
 const cors = require('cors'); // Thêm cors vào đây
-// kết nối với mongodb(egOs06SnjVLToRgU)
-// Bình: gIzzTqWVtE6x4Urj
+//binhtransx25
+//4TJ7d49qp7Ll3mHc
 const atlas = 'mongodb+srv://binhtransx25:4TJ7d49qp7Ll3mHc@cluster0.d5wog.mongodb.net/beauty_flutter?retryWrites=true&w=majority&appName=Cluster0';
 
 // Gọi swagger từ file swagger.js
